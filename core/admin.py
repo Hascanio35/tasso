@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 
-from core.models import Tenant, User
+from core.models import Tenant, User, Contatore
 
 
 @admin.register(Tenant)
@@ -16,3 +16,9 @@ class UserAdmin(DjangoUserAdmin):
     fieldsets = DjangoUserAdmin.fieldsets + (
         ("Tenant", {"fields": ("tenant", "is_platform_admin")}),
     )
+
+
+@admin.register(Contatore)
+class ContatoreAdmin(admin.ModelAdmin):
+    list_display = ("chiave", "anno", "ultimo_numero", "tenant")
+    list_filter = ("chiave", "anno")

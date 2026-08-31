@@ -79,3 +79,31 @@ class TenantAwareModel(models.Model):
         if self.tenant_id is None:
             self.tenant_id = get_current_tenant_id()
         super().save(*args, **kwargs)
+
+
+class Contatore(models.Model):
+    """Contatore generico per assegnare numeri progressivi a un qualunque
+    tipo di documento (DDT, documenti non fiscali per tipo, ecc), un
+    contatore per tenant+chiave+anno. Le fatture usano invece
+    invoicing.SerieNumerazione (gia' modellata con lo stesso principio),
+    per poter avere piu' serie configurabili dall'utente.
+
+    L'incremento va sempre fatto dentro una transazione con
+    select_for_update() sulla riga (vedi core.numbering.prossimo_numero),
+    per evitare numeri duplicati in caso di richieste concorrenti.
+    """
+
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="+")
+    chiave = models.CharField(max_length=50, help_text="es. 'DDT', 'PREVENTIVO', 'ORDINE_CLIENTE'")
+    anno = models.PositiveIntegerField()
+    ultimo_numero = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = "Contatore di numerazione"
+        verbose_name_plural = "Contatori di numerazione"
+        constraints = [
+            models.UniqueConstraint(fields=["tenant", "chiave", "anno"], name="unique_contatore_per_tenant_chiave_anno")
+        ]
+
+    def __str__(self):
+        return f"{self.chiave}/{self.anno} (tenant {self.tenant_id}): {self.ultimo_numero}"

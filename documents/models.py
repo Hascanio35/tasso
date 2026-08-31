@@ -27,7 +27,10 @@ class DocumentoNonFiscale(TenantAwareModel):
     ]
 
     tipo = models.CharField(max_length=20, choices=TIPO)
-    numero = models.PositiveIntegerField()
+    numero = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text="Lasciare vuoto in bozza: viene assegnato automaticamente alla conferma",
+    )
     anno = models.PositiveIntegerField()
     data_documento = models.DateField()
     cliente = models.ForeignKey(
@@ -44,13 +47,30 @@ class DocumentoNonFiscale(TenantAwareModel):
         verbose_name_plural = "Documenti non fiscali"
         constraints = [
             models.UniqueConstraint(
-                fields=["tenant", "tipo", "anno", "numero"], name="unique_numero_doc_per_tenant_tipo_anno"
+                fields=["tenant", "tipo", "anno", "numero"],
+                condition=models.Q(numero__isnull=False),
+                name="unique_numero_doc_per_tenant_tipo_anno",
             )
         ]
         ordering = ["-anno", "-numero"]
 
     def __str__(self):
-        return f"{self.get_tipo_display()} {self.numero}/{self.anno} - {self.cliente or ''}"
+        numero = self.numero if self.numero else "bozza"
+        return f"{self.get_tipo_display()} {numero}/{self.anno} - {self.cliente or ''}"
+
+    def conferma(self):
+        """Assegna il numero progressivo per (tenant, tipo, anno). Non
+        movimenta il magazzino: questi documenti (preventivi, ordini,
+        ricevute, rapportini) non rappresentano una consegna fisica —
+        quella passa sempre da un DDT o da una fattura immediata."""
+        from django.db import transaction
+        from core.numbering import prossimo_numero
+
+        if self.numero:
+            return
+        with transaction.atomic():
+            self.numero = prossimo_numero(self.tenant_id, self.tipo, self.anno)
+            self.save(update_fields=["numero"])
 
 
 class RigaDocumentoNonFiscale(TenantAwareModel):
