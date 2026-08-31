@@ -6,6 +6,22 @@ class RigaDDTInline(admin.TabularInline):
     model = RigaDDT
     extra = 1
 
+    def get_readonly_fields(self, request, obj=None):
+        # obj qui e' il DDT padre, non la singola riga
+        if obj and obj.confermato:
+            return [f.name for f in self.model._meta.fields]
+        return super().get_readonly_fields(request, obj)
+
+    def has_add_permission(self, request, obj=None):
+        if obj and obj.confermato:
+            return False
+        return super().has_add_permission(request, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        if obj and obj.confermato:
+            return False
+        return super().has_delete_permission(request, obj)
+
 
 @admin.action(description="Conferma i DDT selezionati (assegna numero e scarica il magazzino)")
 def conferma_ddt(modeladmin, request, queryset):
@@ -32,8 +48,6 @@ class DocumentoTrasportoAdmin(admin.ModelAdmin):
     actions = [conferma_ddt]
 
     def get_readonly_fields(self, request, obj=None):
-        # una volta confermato, il DDT non e' piu' modificabile
-        # (il magazzino e' gia' stato scaricato di conseguenza)
         if obj and obj.confermato:
             return [f.name for f in self.model._meta.fields]
         return super().get_readonly_fields(request, obj)

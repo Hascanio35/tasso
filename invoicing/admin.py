@@ -6,6 +6,21 @@ class RigaFatturaInline(admin.TabularInline):
     model = RigaFattura
     extra = 1
 
+    def get_readonly_fields(self, request, obj=None):
+        if obj and obj.confermata:
+            return [f.name for f in self.model._meta.fields]
+        return super().get_readonly_fields(request, obj)
+
+    def has_add_permission(self, request, obj=None):
+        if obj and obj.confermata:
+            return False
+        return super().has_add_permission(request, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        if obj and obj.confermata:
+            return False
+        return super().has_delete_permission(request, obj)
+
 
 @admin.register(SerieNumerazione)
 class SerieNumerazioneAdmin(admin.ModelAdmin):
