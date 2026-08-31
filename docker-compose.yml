@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:16-alpine
+    pull_policy: always
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tasso}
+      POSTGRES_USER: ${POSTGRES_USER:-tasso}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tasso}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tasso}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-dev-insecure-cambia-questa-chiave-in-produzione}
+      DEBUG: ${DEBUG:-False}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      DATABASE_URL: postgres://${POSTGRES_USER:-tasso}:${POSTGRES_PASSWORD:-tasso}@db:5432/${POSTGRES_DB:-tasso}
+    volumes:
+      - static_data:/app/staticfiles
+    ports:
+      - "8000:8000"
+
+volumes:
+  db_data:
+  static_data:

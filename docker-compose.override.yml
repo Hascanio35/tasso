@@ -1,0 +1,8 @@
+services:
+  web:
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    volumes:
+      - .:/app
+      - static_data:/app/staticfiles
+    environment:
+      DEBUG: "True"
