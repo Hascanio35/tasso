@@ -20,6 +20,33 @@ Fa due cose:
 """
 
 
+class SoloPlatformAdmin:
+    """Mixin opposto a TenantAwareAdminMixin: la sezione e' visibile e
+    utilizzabile SOLO dai platform admin (o dai superuser Django) — un
+    utente normale di un'azienda cliente non la vede mai, a prescindere
+    da eventuali permessi assegnati per errore. Da usare per dati che
+    configuri tu per conto del cliente, non lui stesso (es. Aziende,
+    Utenti, credenziali dei provider SDI)."""
+
+    def _e_platform_admin(self, request):
+        return request.user.is_superuser or getattr(request.user, "is_platform_admin", False)
+
+    def has_module_permission(self, request):
+        return self._e_platform_admin(request) and super().has_module_permission(request)
+
+    def has_view_permission(self, request, obj=None):
+        return self._e_platform_admin(request) and super().has_view_permission(request, obj)
+
+    def has_add_permission(self, request):
+        return self._e_platform_admin(request) and super().has_add_permission(request)
+
+    def has_change_permission(self, request, obj=None):
+        return self._e_platform_admin(request) and super().has_change_permission(request, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        return self._e_platform_admin(request) and super().has_delete_permission(request, obj)
+
+
 class TenantAwareAdminMixin:
     def _e_platform_admin(self, request):
         return getattr(request.user, "is_platform_admin", False)
