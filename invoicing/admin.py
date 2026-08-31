@@ -1,8 +1,9 @@
 from django.contrib import admin, messages
+from core.admin_mixins import TenantAwareAdminMixin
 from invoicing.models import Fattura, RigaFattura, SerieNumerazione
 
 
-class RigaFatturaInline(admin.TabularInline):
+class RigaFatturaInline(TenantAwareAdminMixin, admin.TabularInline):
     model = RigaFattura
     extra = 1
 
@@ -23,7 +24,7 @@ class RigaFatturaInline(admin.TabularInline):
 
 
 @admin.register(SerieNumerazione)
-class SerieNumerazioneAdmin(admin.ModelAdmin):
+class SerieNumerazioneAdmin(TenantAwareAdminMixin, admin.ModelAdmin):
     list_display = ("codice", "anno", "ultimo_numero")
 
 
@@ -52,7 +53,7 @@ def emetti_fatture(modeladmin, request, queryset):
 
 
 @admin.register(Fattura)
-class FatturaAdmin(admin.ModelAdmin):
+class FatturaAdmin(TenantAwareAdminMixin, admin.ModelAdmin):
     list_display = ("numero", "serie", "data_documento", "cliente", "totale", "confermata", "stato_sdi")
     list_filter = ("stato_sdi", "tipo_documento_sdi", "serie", "confermata")
     search_fields = ("numero", "cliente__ragione_sociale")

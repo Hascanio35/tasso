@@ -1,8 +1,9 @@
 from django.contrib import admin, messages
+from core.admin_mixins import TenantAwareAdminMixin
 from ddt.models import DocumentoTrasporto, RigaDDT
 
 
-class RigaDDTInline(admin.TabularInline):
+class RigaDDTInline(TenantAwareAdminMixin, admin.TabularInline):
     model = RigaDDT
     extra = 1
 
@@ -40,7 +41,7 @@ def conferma_ddt(modeladmin, request, queryset):
 
 
 @admin.register(DocumentoTrasporto)
-class DocumentoTrasportoAdmin(admin.ModelAdmin):
+class DocumentoTrasportoAdmin(TenantAwareAdminMixin, admin.ModelAdmin):
     list_display = ("numero", "anno", "data_documento", "cliente", "causale_trasporto", "confermato", "fatturato")
     list_filter = ("causale_trasporto", "confermato", "fatturato")
     search_fields = ("numero", "cliente__ragione_sociale")

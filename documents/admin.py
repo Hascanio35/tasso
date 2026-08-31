@@ -1,8 +1,9 @@
 from django.contrib import admin, messages
+from core.admin_mixins import TenantAwareAdminMixin
 from documents.models import DocumentoNonFiscale, RigaDocumentoNonFiscale
 
 
-class RigaDocumentoNonFiscaleInline(admin.TabularInline):
+class RigaDocumentoNonFiscaleInline(TenantAwareAdminMixin, admin.TabularInline):
     model = RigaDocumentoNonFiscale
     extra = 1
 
@@ -22,7 +23,7 @@ def conferma_documenti(modeladmin, request, queryset):
 
 
 @admin.register(DocumentoNonFiscale)
-class DocumentoNonFiscaleAdmin(admin.ModelAdmin):
+class DocumentoNonFiscaleAdmin(TenantAwareAdminMixin, admin.ModelAdmin):
     list_display = ("tipo", "numero", "anno", "data_documento", "cliente", "stato")
     list_filter = ("tipo", "stato")
     search_fields = ("numero", "cliente__ragione_sociale")
