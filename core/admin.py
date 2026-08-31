@@ -3,6 +3,10 @@ from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 
 from core.models import Tenant, User, Contatore
 
+admin.site.site_header = "Tasso — Gestionale multi-azienda"
+admin.site.site_title = "Tasso"
+admin.site.index_title = "Pannello di amministrazione"
+
 
 @admin.register(Tenant)
 class TenantAdmin(admin.ModelAdmin):

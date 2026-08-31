@@ -1,0 +1,42 @@
+:root {
+    --primary: #1f1a17;
+    --secondary: #3a2a1d;
+    --accent: #c8722c;
+    --primary-fg: #f7f3ea;
+
+    --header-color: #f7f3ea;
+    --header-branding-color: #f7f3ea;
+    --header-bg: #1f1a17;
+    --header-link-color: #f7f3ea;
+
+    --breadcrumbs-fg: #f7f3ea;
+    --breadcrumbs-link-fg: #f0b27a;
+    --breadcrumbs-bg: #3a2a1d;
+
+    --link-fg: #b8631f;
+    --link-hover-color: #c8722c;
+    --link-selected-fg: #8a4a17;
+
+    --button-bg: #c8722c;
+    --button-hover-bg: #b8631f;
+    --default-button-bg: #3a2a1d;
+    --default-button-hover-bg: #2b2118;
+
+    --object-tools-bg: #c8722c;
+    --object-tools-hover-bg: #b8631f;
+}
+
+#branding-tasso {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#branding-tasso img {
+    height: 34px;
+    width: 34px;
+}
+
+#branding-tasso h1 {
+    margin: 0;
+}

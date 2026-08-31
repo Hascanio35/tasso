@@ -1,0 +1,17 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | Tasso{% endblock %}
+
+{% block branding %}
+<div id="branding-tasso">
+    <img src="{% static 'branding/tasso-logo.svg' %}" alt="Tasso">
+    <h1 id="site-name"><a href="{% url 'admin:index' %}">Tasso — Gestionale</a></h1>
+</div>
+{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin_custom.css' %}">
+<link rel="icon" type="image/svg+xml" href="{% static 'branding/tasso-logo.svg' %}">
+{% endblock %}
