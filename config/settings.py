@@ -21,6 +21,21 @@ SECRET_KEY = env("DJANGO_SECRET_KEY", default="dev-insecure-change-me")
 DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"])
 
+# Necessario per il login/admin quando Tasso e' servito in HTTPS dietro
+# nginx-proxy: senza questi due, Django rifiuta le richieste POST (CSRF)
+# provenienti dal dominio pubblico, o non riconosce che la connessione
+# e' gia' cifrata a monte dal proxy.
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# Chiave di cifratura per le credenziali dei provider SDI (vedi
+# sdi_integration/crypto.py). SEPARATA da DJANGO_SECRET_KEY: va
+# generata una volta con
+#   python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+# Il valore di default qui sotto e' solo per sviluppo locale — in
+# produzione va sempre impostata via variabile d'ambiente.
+SDI_ENCRYPTION_KEY = env("SDI_ENCRYPTION_KEY", default="P2uUODdN4tWi1H-IRF-I2LgsRTOx6MsYR4OHKxGZ6Es=")
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -94,6 +109,9 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
 STORAGES = {
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
 }

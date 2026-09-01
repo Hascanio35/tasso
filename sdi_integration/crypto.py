@@ -31,4 +31,6 @@ def decifra(testo_cifrato: str) -> str:
     try:
         return _fernet().decrypt(testo_cifrato.encode()).decode()
     except InvalidToken:
+        # chiave cambiata o dato corrotto: meglio segnalarlo chiaramente
+        # che restituire un valore silenziosamente sbagliato
         return "‹non decifrabile: SDI_ENCRYPTION_KEY diversa da quella usata al salvataggio›"

@@ -1,0 +1,58 @@
+{% extends "pdf/base_documento.html" %}
+{% block contenuto %}
+
+<div class="titolo-documento">DDT {{ ddt.numero }}/{{ ddt.anno }}</div>
+<div class="sottotitolo-documento">
+    Data documento: {{ ddt.data_documento|date:"d/m/Y" }}
+    {% if ddt.ora_inizio_trasporto %} — Ora inizio trasporto: {{ ddt.ora_inizio_trasporto|time:"H:i" }}{% endif %}
+    — {{ ddt.get_causale_trasporto_display }}
+</div>
+
+<div class="blocco-cliente">
+    <strong>Destinatario:</strong> {{ ddt.cliente.ragione_sociale }}<br>
+    {% if ddt.indirizzo_destinazione %}
+        {{ ddt.indirizzo_destinazione.indirizzo }}, {{ ddt.indirizzo_destinazione.cap }} {{ ddt.indirizzo_destinazione.citta }} ({{ ddt.indirizzo_destinazione.provincia }})
+    {% elif ddt.cliente.indirizzo %}
+        {{ ddt.cliente.indirizzo }}, {{ ddt.cliente.cap }} {{ ddt.cliente.citta }} ({{ ddt.cliente.provincia }})
+    {% endif %}
+</div>
+
+<table class="righe">
+    <thead>
+        <tr>
+            <th>Descrizione</th>
+            <th>Quantita'</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for riga in righe %}
+        <tr>
+            <td>{{ riga.descrizione|default:riga.articolo.descrizione }}</td>
+            <td class="numero">{{ riga.quantita }} {{ riga.articolo.unita_misura }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<table style="margin-top: 20px; font-size: 9.5pt;">
+    <tr>
+        <td style="padding-right: 30px;"><strong>Aspetto beni:</strong> {{ ddt.get_aspetto_beni_display }}</td>
+        <td style="padding-right: 30px;"><strong>Colli:</strong> {{ ddt.numero_colli|default:"—" }}</td>
+        <td style="padding-right: 30px;"><strong>Peso (kg):</strong> {{ ddt.peso_kg|default:"—" }}</td>
+        <td><strong>Porto:</strong> {{ ddt.get_porto_display }}</td>
+    </tr>
+</table>
+{% if ddt.vettore %}
+<p style="font-size: 9.5pt;"><strong>Vettore:</strong> {{ ddt.vettore }}</p>
+{% endif %}
+
+{% if ddt.note %}
+<p style="margin-top: 20px; font-size: 9.5pt; color: #555;">{{ ddt.note }}</p>
+{% endif %}
+
+<div style="margin-top: 60px; display: flex; justify-content: space-between; font-size: 9.5pt;">
+    <div>Firma del vettore: _______________________</div>
+    <div>Firma del destinatario: _______________________</div>
+</div>
+
+{% endblock %}

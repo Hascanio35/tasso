@@ -6,6 +6,8 @@ django-filter==24.*
 lxml==5.*          # generazione/parsing XML FatturaPA
 python-dateutil==2.9.*
 requests==2.32.*    # chiamate verso il provider SDI
-cryptography==43.*   # cifratura credenziali provider SDI
 gunicorn==23.*
 whitenoise==6.*
+cryptography==43.*   # cifratura credenziali provider SDI
+weasyprint==62.*     # generazione PDF fatture/DDT/documenti
+Pillow==10.*          # gestione immagini (logo azienda)

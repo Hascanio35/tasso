@@ -1,0 +1,52 @@
+{% extends "pdf/base_documento.html" %}
+{% block contenuto %}
+
+<div class="titolo-documento">{{ documento.get_tipo_display }} {{ documento.numero }}/{{ documento.anno }}</div>
+<div class="sottotitolo-documento">
+    Data: {{ documento.data_documento|date:"d/m/Y" }}
+    {% if documento.validita_giorni %} — Valido {{ documento.validita_giorni }} giorni{% endif %}
+</div>
+
+{% if documento.cliente %}
+<div class="blocco-cliente">
+    <strong>{{ documento.cliente.ragione_sociale }}</strong><br>
+    {% if documento.cliente.indirizzo %}{{ documento.cliente.indirizzo }}, {{ documento.cliente.cap }} {{ documento.cliente.citta }} ({{ documento.cliente.provincia }})<br>{% endif %}
+    {% if documento.cliente.partita_iva %}P.IVA {{ documento.cliente.partita_iva }}{% endif %}
+</div>
+{% endif %}
+
+<table class="righe">
+    <thead>
+        <tr>
+            <th>Descrizione</th>
+            <th>Qta</th>
+            <th>Prezzo unit.</th>
+            <th>Totale</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for riga in righe %}
+        <tr>
+            <td>{{ riga.descrizione }}</td>
+            <td class="numero">{{ riga.quantita }}</td>
+            <td class="numero">€ {{ riga.prezzo_unitario }}</td>
+            <td class="numero">€ {{ riga.imponibile_riga|default_if_none:""|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if documento.imponibile %}
+<div class="totali">
+    <table>
+        <tr class="totale-finale"><td>Totale</td><td class="numero">€ {{ documento.imponibile|floatformat:2 }}</td></tr>
+    </table>
+</div>
+<div style="clear: both;"></div>
+{% endif %}
+
+{% if documento.note %}
+<p style="margin-top: 20px; font-size: 9.5pt; color: #555;">{{ documento.note }}</p>
+{% endif %}
+
+{% endblock %}

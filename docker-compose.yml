@@ -25,12 +25,73 @@ services:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-dev-insecure-cambia-questa-chiave-in-produzione}
       DEBUG: ${DEBUG:-False}
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-}
       DATABASE_URL: postgres://${POSTGRES_USER:-tasso}:${POSTGRES_PASSWORD:-tasso}@db:5432/${POSTGRES_DB:-tasso}
+      # Usati da nginx-proxy/acme-companion per instradare il dominio
+      # e generare il certificato SSL automaticamente. Se VIRTUAL_HOST
+      # e' vuoto (default), questi container restano inattivi e Tasso
+      # e' comunque raggiungibile via IP:8000 come prima.
+      VIRTUAL_HOST: ${DOMINIO:-}
+      VIRTUAL_PORT: "8000"
+      LETSENCRYPT_HOST: ${DOMINIO:-}
+      LETSENCRYPT_EMAIL: ${EMAIL_CERTIFICATO:-}
     volumes:
       - static_data:/app/staticfiles
+      - media_data:/app/media
+    expose:
+      - "8000"
     ports:
       - "8000:8000"
+
+  scheduler:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-dev-insecure-cambia-questa-chiave-in-produzione}
+      DEBUG: ${DEBUG:-False}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-}
+      DATABASE_URL: postgres://${POSTGRES_USER:-tasso}:${POSTGRES_PASSWORD:-tasso}@db:5432/${POSTGRES_DB:-tasso}
+    # Nessuna porta esposta: questo servizio non risponde a richieste
+    # web, esegue solo in loop il comando di invio differito a SDI.
+    # L'entrypoint standard (wait-for-db, migrate, collectstatic) resta
+    # invariato; cambia solo il comando finale eseguito.
+    command: ["/bin/sh", "-c", "while true; do python manage.py invia_fatture_scadute; sleep 3600; done"]
+
+  nginx-proxy:
+    image: nginxproxy/nginx-proxy:latest
+    restart: unless-stopped
+    labels:
+      - "com.github.nginx-proxy.nginx=true"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - certs:/etc/nginx/certs
+      - vhost:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+
+  acme-companion:
+    image: nginxproxy/acme-companion:latest
+    restart: unless-stopped
+    depends_on:
+      - nginx-proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - certs:/etc/nginx/certs
+      - vhost:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - acme_state:/etc/acme.sh
 
 volumes:
   db_data:
   static_data:
+  media_data:
+  certs:
+  vhost:
+  html:
+  acme_state:

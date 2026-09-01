@@ -18,6 +18,9 @@ Fa due cose:
    all'azienda sbagliata — e lo assegna automaticamente in base al
    loro utente, sia per l'oggetto principale sia per le righe inline.
 """
+from django.http import Http404, HttpResponse
+from django.urls import path, reverse
+from django.utils.html import format_html
 
 
 class SoloPlatformAdmin:
@@ -103,3 +106,46 @@ class TenantAwareAdminMixin:
         for obj in formset.deleted_objects:
             obj.delete()
         formset.save_m2m()
+
+
+class PdfDownloadAdminMixin:
+    """Aggiunge un pulsante 'Scarica PDF' nella lista e nel dettaglio di
+    un ModelAdmin. La sottoclasse deve impostare:
+      - funzione_genera_pdf: funzione che prende l'oggetto e ritorna i
+        bytes del PDF (es. invoicing.pdf.genera_pdf_fattura)
+      - campo_stato_confermato: nome del campo booleano che indica se
+        il documento e' emesso/confermato (es. 'confermata'), oppure
+        None se il PDF deve essere sempre disponibile
+    e includere 'link_pdf' in list_display e/o readonly_fields.
+    """
+
+    funzione_genera_pdf = None
+    campo_stato_confermato = None
+
+    def get_urls(self):
+        urls = super().get_urls()
+        info = (self.model._meta.app_label, self.model._meta.model_name)
+        custom = [
+            path("<int:object_id>/pdf/", self.admin_site.admin_view(self._scarica_pdf), name="%s_%s_pdf" % info),
+        ]
+        return custom + urls
+
+    def _scarica_pdf(self, request, object_id):
+        oggetto = self.get_object(request, object_id)
+        if oggetto is None:
+            raise Http404
+        pdf_bytes = self.funzione_genera_pdf(oggetto)
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = f'inline; filename="{self.model._meta.model_name}_{oggetto.pk}.pdf"'
+        return response
+
+    def link_pdf(self, obj):
+        if not obj.pk:
+            return "—"
+        if self.campo_stato_confermato and not getattr(obj, self.campo_stato_confermato, False):
+            return "—"
+        info = (self.model._meta.app_label, self.model._meta.model_name)
+        url = reverse("admin:%s_%s_pdf" % info, args=[obj.pk])
+        return format_html('<a class="button" href="{}" target="_blank">Scarica PDF</a>', url)
+
+    link_pdf.short_description = "PDF"

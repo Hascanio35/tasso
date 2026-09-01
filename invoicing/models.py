@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 from core.models import TenantAwareModel
 from clients.models import Anagrafica
@@ -52,8 +53,12 @@ class Fattura(TenantAwareModel):
 
     cliente = models.ForeignKey(Anagrafica, on_delete=models.PROTECT, related_name="fatture")
 
+    # riferimenti a eventuali DDT collegati (fattura differita da DDT multipli)
     ddt_collegati = models.ManyToManyField("ddt.DocumentoTrasporto", blank=True, related_name="fatture")
 
+    # usato solo per lo scarico automatico di magazzino sulle fatture
+    # immediate (senza DDT collegati): se la fattura deriva da uno o piu'
+    # DDT, il magazzino e' gia' stato scaricato alla conferma dei DDT.
     magazzino = models.ForeignKey(
         "warehouse.Magazzino", null=True, blank=True, on_delete=models.PROTECT, related_name="fatture_immediate",
         help_text="Necessario solo per fatture immediate (senza DDT collegati) che contengono beni fisici",
@@ -71,6 +76,9 @@ class Fattura(TenantAwareModel):
     confermata = models.BooleanField(
         default=False,
         help_text="True dopo l'emissione: numero assegnato e (se immediata) magazzino scaricato",
+    )
+    emesso_il = models.DateTimeField(
+        null=True, blank=True, help_text="Data/ora esatta dell'emissione, usata per calcolare l'invio differito a SDI"
     )
     note = models.TextField(blank=True)
     creato_il = models.DateTimeField(auto_now_add=True)
@@ -131,8 +139,21 @@ class Fattura(TenantAwareModel):
                         avvisi_scorta.append(riga.articolo)
 
             self.confermata = True
-            self.save(update_fields=["numero", "confermata"])
+            self.emesso_il = timezone.now()
+            if self.stato_sdi == "BOZZA":
+                self.stato_sdi = "DA_INVIARE"
+            from invoicing.fatturapa import genera_xml_fatturapa
+            self.xml_fatturapa = genera_xml_fatturapa(self).decode("utf-8")
+            self.save(update_fields=["numero", "confermata", "emesso_il", "stato_sdi", "xml_fatturapa"])
         return avvisi_scorta
+
+    def rigenera_xml(self):
+        """Rigenera l'XML FatturaPA dai dati correnti, senza toccare
+        numero o stato. Utile se il generatore viene aggiornato dopo
+        che la fattura era gia' stata emessa."""
+        from invoicing.fatturapa import genera_xml_fatturapa
+        self.xml_fatturapa = genera_xml_fatturapa(self).decode("utf-8")
+        self.save(update_fields=["xml_fatturapa"])
 
 
 class RigaFattura(TenantAwareModel):

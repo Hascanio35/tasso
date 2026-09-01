@@ -38,9 +38,25 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-tasso}:${POSTGRES_PASSWORD:-tasso}@db:5432/${POSTGRES_DB:-tasso}
     volumes:
       - static_data:/app/staticfiles
+      - media_data:/app/media
     ports:
       - "8000:8000"
+
+  scheduler:
+    image: ghcr.io/Hascanio35/tasso:latest
+    pull_policy: always
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-dev-insecure-cambia-questa-chiave-in-produzione}
+      DEBUG: ${DEBUG:-False}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      DATABASE_URL: postgres://${POSTGRES_USER:-tasso}:${POSTGRES_PASSWORD:-tasso}@db:5432/${POSTGRES_DB:-tasso}
+    command: ["/bin/sh", "-c", "while true; do python manage.py invia_fatture_scadute; sleep 3600; done"]
 
 volumes:
   db_data:
   static_data:
+  media_data:

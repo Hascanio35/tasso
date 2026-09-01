@@ -1,6 +1,7 @@
 from django.contrib import admin, messages
-from core.admin_mixins import TenantAwareAdminMixin
+from core.admin_mixins import TenantAwareAdminMixin, PdfDownloadAdminMixin
 from ddt.models import DocumentoTrasporto, RigaDDT
+from ddt.pdf import genera_pdf_ddt
 
 
 class RigaDDTInline(TenantAwareAdminMixin, admin.TabularInline):
@@ -41,14 +42,18 @@ def conferma_ddt(modeladmin, request, queryset):
 
 
 @admin.register(DocumentoTrasporto)
-class DocumentoTrasportoAdmin(TenantAwareAdminMixin, admin.ModelAdmin):
-    list_display = ("numero", "anno", "data_documento", "cliente", "causale_trasporto", "confermato", "fatturato")
+class DocumentoTrasportoAdmin(TenantAwareAdminMixin, PdfDownloadAdminMixin, admin.ModelAdmin):
+    funzione_genera_pdf = staticmethod(genera_pdf_ddt)
+    campo_stato_confermato = "confermato"
+
+    list_display = ("numero", "anno", "data_documento", "cliente", "causale_trasporto", "confermato", "fatturato", "link_pdf")
     list_filter = ("causale_trasporto", "confermato", "fatturato")
     search_fields = ("numero", "cliente__ragione_sociale")
     inlines = [RigaDDTInline]
     actions = [conferma_ddt]
 
     def get_readonly_fields(self, request, obj=None):
+        base = ["link_pdf"]
         if obj and obj.confermato:
-            return [f.name for f in self.model._meta.fields]
-        return super().get_readonly_fields(request, obj)
+            return base + [f.name for f in self.model._meta.fields]
+        return base + list(super().get_readonly_fields(request, obj))

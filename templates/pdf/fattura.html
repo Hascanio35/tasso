@@ -1,0 +1,63 @@
+{% extends "pdf/base_documento.html" %}
+{% block contenuto %}
+
+<div class="titolo-documento">Fattura {{ fattura.serie.codice }}-{{ fattura.numero }}</div>
+<div class="sottotitolo-documento">
+    Data: {{ fattura.data_documento|date:"d/m/Y" }}
+    {% if fattura.tipo_documento_sdi != "TD01" %} — {{ fattura.get_tipo_documento_sdi_display }}{% endif %}
+</div>
+
+<div class="blocco-cliente">
+    <strong>{{ fattura.cliente.ragione_sociale }}</strong><br>
+    {% if fattura.cliente.indirizzo %}{{ fattura.cliente.indirizzo }}, {{ fattura.cliente.cap }} {{ fattura.cliente.citta }} ({{ fattura.cliente.provincia }})<br>{% endif %}
+    {% if fattura.cliente.partita_iva %}P.IVA {{ fattura.cliente.partita_iva }}{% endif %}
+    {% if fattura.cliente.codice_fiscale %} — CF {{ fattura.cliente.codice_fiscale }}{% endif %}
+</div>
+
+<table class="righe">
+    <thead>
+        <tr>
+            <th>Descrizione</th>
+            <th>Qta</th>
+            <th>Prezzo unit.</th>
+            <th>Sconto</th>
+            <th>IVA</th>
+            <th>Totale</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for riga in righe %}
+        <tr>
+            <td>{{ riga.descrizione }}</td>
+            <td class="numero">{{ riga.quantita }}</td>
+            <td class="numero">€ {{ riga.prezzo_unitario }}</td>
+            <td class="numero">{% if riga.sconto_percentuale %}{{ riga.sconto_percentuale }}%{% else %}—{% endif %}</td>
+            <td class="numero">{{ riga.aliquota_iva }}%</td>
+            <td class="numero">€ {{ riga.imponibile_riga|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="totali">
+    <table>
+        <tr><td>Imponibile</td><td class="numero">€ {{ fattura.imponibile|floatformat:2 }}</td></tr>
+        <tr><td>IVA</td><td class="numero">€ {{ fattura.imposta|floatformat:2 }}</td></tr>
+        <tr class="totale-finale"><td>Totale</td><td class="numero">€ {{ fattura.totale|floatformat:2 }}</td></tr>
+    </table>
+</div>
+
+<div style="clear: both;"></div>
+
+{% if tenant.iban %}
+<p style="margin-top: 30px; font-size: 9.5pt;">
+    <strong>Pagamento tramite bonifico bancario</strong><br>
+    IBAN: {{ tenant.iban }}
+</p>
+{% endif %}
+
+{% if fattura.note %}
+<p style="margin-top: 20px; font-size: 9.5pt; color: #555;">{{ fattura.note }}</p>
+{% endif %}
+
+{% endblock %}

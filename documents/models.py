@@ -91,3 +91,7 @@ class RigaDocumentoNonFiscale(TenantAwareModel):
 
     def __str__(self):
         return f"Riga {self.numero_riga} - {self.descrizione}"
+
+    @property
+    def imponibile_riga(self):
+        return self.quantita * self.prezzo_unitario

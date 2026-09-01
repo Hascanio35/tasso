@@ -25,6 +25,31 @@ class Tenant(models.Model):
     attivo = models.BooleanField(default=True)
     creato_il = models.DateTimeField(auto_now_add=True)
 
+    # necessari per generare l'XML FatturaPA (vedi invoicing/fatturapa.py)
+    regime_fiscale = models.CharField(
+        max_length=4, default="RF01",
+        help_text="Codice regime fiscale per la fattura elettronica. Il piu' comune e' RF01 (ordinario); "
+                   "RF19 e' il regime forfettario. Altri codici: consulta il tuo commercialista se necessario.",
+    )
+    iban = models.CharField(max_length=34, blank=True, help_text="Mostrato come modalita' di pagamento in fatture e XML")
+    giorni_attesa_invio_sdi = models.PositiveIntegerField(
+        default=3,
+        help_text="Giorni di attesa dopo l'emissione di una fattura prima dell'invio automatico a SDI. "
+                   "0 = nessuna attesa (il task schedulato la invia al primo giro utile). "
+                   "L'azione manuale 'Invia a SDI' resta comunque disponibile per inviare subito.",
+    )
+
+    # branding dei documenti PDF (fatture/DDT/documenti) — impostabile
+    # solo qui, dal platform admin: nessun utente cliente puo' toccarlo
+    logo = models.ImageField(upload_to="loghi_aziende/", blank=True, null=True)
+    colore_accento = models.CharField(
+        max_length=7, default="#1f1a17", help_text="Colore in formato esadecimale, es. #1f1a17, usato nell'intestazione dei documenti PDF"
+    )
+    piede_pagina_legale = models.TextField(
+        blank=True,
+        help_text="Testo libero stampato in fondo a fatture/DDT/documenti, es. capitale sociale, numero REA, tribunale competente",
+    )
+
     class Meta:
         verbose_name = "Azienda (tenant)"
         verbose_name_plural = "Aziende (tenant)"
